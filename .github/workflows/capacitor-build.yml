@@ -40,12 +40,10 @@ jobs:
         with:
           path: ./dist
 
-      - name: Inject Capacitor & Sync
-        run: |
-          npm i @capacitor/core
-          npm i -D @capacitor/cli @capacitor/android
-          npx cap add android || true
-          npx cap sync android
+      # Capacitor deps are installed by `npm ci` and the android platform
+      # is committed, so only a sync of web assets is needed here.
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Assemble Debug APK
         working-directory: ./android

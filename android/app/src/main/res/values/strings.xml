@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AI Relay Manager</string>
+    <string name="title_activity_main">AI Relay Manager</string>
+    <string name="package_name">com.relay.manager</string>
+    <string name="custom_url_scheme">com.relay.manager</string>
+</resources>
