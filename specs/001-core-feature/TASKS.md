@@ -17,4 +17,4 @@
 - [DONE] Build Archive Viewer Component (Reverse-chronological mapped cards and delete logic).
 - [DONE] Assemble components into main `App.tsx` layout.
 - [DONE] Initialize Capacitor (`npx cap init` and `npx cap add android`).
-- [IN PROGRESS] Write GitHub Actions CI/CD workflow to `.github/workflows/capacitor-build.yml` including GH Pages deployment.
+- [DONE] Write GitHub Actions CI/CD workflow to `.github/workflows/capacitor-build.yml` including GH Pages deployment.
