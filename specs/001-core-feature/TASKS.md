@@ -1,9 +1,9 @@
 # TASK LEDGER
 
-- [ ] Initialize React/Vite/TS project environment.
-- [ ] Configure `vite.config.ts` with `base: './'` for relative asset pathing and configure `vite-plugin-pwa` with a basic manifest for installability.
-- [ ] Install dependencies: `zustand`, `lz-string`, `lucide-react`, `tailwindcss`, `vite-plugin-pwa`, `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`.
-- [ ] Configure Tailwind CSS (tailwind.config.js, index.css).
+- [DONE] Initialize React/Vite/TS project environment.
+- [DONE] Configure `vite.config.ts` with `base: './'` for relative asset pathing and configure `vite-plugin-pwa` with a basic manifest for installability.
+- [DONE] Install dependencies: `zustand`, `lz-string`, `lucide-react`, `tailwindcss`, `vite-plugin-pwa`, `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`.
+- [DONE] Configure Tailwind CSS (tailwind.config.js, index.css).
 - [ ] Create Zustand store (`src/store.ts`) adhering to the `<DataSchema>`.
 - [ ] Seed default agents using `crypto.randomUUID()`.
 - [ ] Implement LZ-String state serialization using `compressToEncodedURIComponent`.
