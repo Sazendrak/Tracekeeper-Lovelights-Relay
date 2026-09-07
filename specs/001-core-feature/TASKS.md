@@ -16,5 +16,5 @@
 - [DONE] Build Sync & Seal Component (URI-safe Base64 UI & archive logic).
 - [DONE] Build Archive Viewer Component (Reverse-chronological mapped cards and delete logic).
 - [DONE] Assemble components into main `App.tsx` layout.
-- [ ] Initialize Capacitor (`npx cap init` and `npx cap add android`).
+- [IN PROGRESS] Initialize Capacitor (`npx cap init` and `npx cap add android`).
 - [ ] Write GitHub Actions CI/CD workflow to `.github/workflows/capacitor-build.yml` including GH Pages deployment.
