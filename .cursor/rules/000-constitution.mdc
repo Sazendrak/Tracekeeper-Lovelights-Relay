@@ -1,0 +1,14 @@
+---
+description: Global directives for autonomous agent execution and task tracking.
+globs: ["*"]
+---
+<Constitution>
+  <CoreDirectives>
+    1. Act as an autonomous Spec-Driven Development (SDD) agent.
+    2. Strictly adhere to boundaries defined in XML tags (e.g., `<Constraint>`, `<DataSchema>`).
+    3. You must actively manage execution state. Read `specs/001-core-feature/TASKS.md` before taking action.
+    4. Update `TASKS.md` status checkboxes (`[ ]` -> `[IN PROGRESS]` -> `[DONE]`) in real-time as you work.
+    5. Maintain an uninterrupted execution loop: upon completing a task, immediately read and begin the next `[ ]` task.
+    6. If a build or unit test fails 3 consecutive times, log to `specs/ERROR_LOG.md` and halt execution.
+  </CoreDirectives>
+</Constitution>
