@@ -126,16 +126,62 @@ export const useStore = create<Store>()(
       },
 
       deleteAgent: (id) =>
-        set((state) => ({
-          agents: state.agents.filter((agent) => agent.id !== id),
-        })),
+        set((state) => {
+          const agents = state.agents.filter((agent) => agent.id !== id);
+          let activeRound = state.activeRound;
+          if (activeRound) {
+            // Deletion is permanent, so scrub every reference in the round.
+            const agentGuesses = { ...activeRound.agentGuesses };
+            delete agentGuesses[id];
+            const responses = { ...activeRound.responses };
+            delete responses[id];
+            activeRound = {
+              ...activeRound,
+              agentGuesses,
+              responses,
+              turnOrder: activeRound.turnOrder.filter((tid) => tid !== id),
+              starterAgentId:
+                activeRound.starterAgentId === id
+                  ? computeStarter(
+                      activeRound.targetNumber,
+                      agentGuesses,
+                      agents.filter((a) => a.isActive),
+                    )
+                  : activeRound.starterAgentId,
+            };
+          }
+          return { agents, activeRound };
+        }),
 
       toggleAgentActive: (id) =>
-        set((state) => ({
-          agents: state.agents.map((agent) =>
+        set((state) => {
+          const agents = state.agents.map((agent) =>
             agent.id === id ? { ...agent, isActive: !agent.isActive } : agent,
-          ),
-        })),
+          );
+          const deactivated =
+            agents.find((a) => a.id === id)?.isActive === false;
+          let activeRound = state.activeRound;
+          if (activeRound && deactivated) {
+            // Drop the agent from the running round; the response text is
+            // kept so re-activating and regenerating the order restores it.
+            const agentGuesses = { ...activeRound.agentGuesses };
+            delete agentGuesses[id];
+            activeRound = {
+              ...activeRound,
+              agentGuesses,
+              turnOrder: activeRound.turnOrder.filter((tid) => tid !== id),
+              starterAgentId:
+                activeRound.starterAgentId === id
+                  ? computeStarter(
+                      activeRound.targetNumber,
+                      agentGuesses,
+                      agents.filter((a) => a.isActive),
+                    )
+                  : activeRound.starterAgentId,
+            };
+          }
+          return { agents, activeRound };
+        }),
 
       setPromptTemplate: (template) => set({ promptTemplate: template }),
 

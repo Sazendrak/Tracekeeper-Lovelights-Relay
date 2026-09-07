@@ -14,6 +14,26 @@ export type ImportResult =
   | { ok: true; round: RelayRound }
   | { ok: false; error: string };
 
+/** Keeps only entries whose values are finite numbers. */
+function normalizeGuesses(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object') return {};
+  const out: Record<string, number> = {};
+  for (const [key, v] of Object.entries(value)) {
+    if (typeof v === 'number' && Number.isFinite(v)) out[key] = v;
+  }
+  return out;
+}
+
+/** Keeps only entries whose values are strings. */
+function normalizeResponses(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object') return {};
+  const out: Record<string, string> = {};
+  for (const [key, v] of Object.entries(value)) {
+    if (typeof v === 'string') out[key] = v;
+  }
+  return out;
+}
+
 export function importRound(payload: string): ImportResult {
   const trimmed = payload.trim();
   if (!trimmed) {
@@ -58,20 +78,14 @@ export function importRound(payload: string): ImportResult {
       schemaVersion: SCHEMA_VERSION,
       targetNumber:
         typeof round.targetNumber === 'number' ? round.targetNumber : null,
-      agentGuesses:
-        round.agentGuesses && typeof round.agentGuesses === 'object'
-          ? round.agentGuesses
-          : {},
+      agentGuesses: normalizeGuesses(round.agentGuesses),
       starterAgentId:
         typeof round.starterAgentId === 'string' ? round.starterAgentId : null,
       topic: typeof round.topic === 'string' ? round.topic : '',
       turnOrder: Array.isArray(round.turnOrder)
         ? round.turnOrder.filter((id): id is string => typeof id === 'string')
         : [],
-      responses:
-        round.responses && typeof round.responses === 'object'
-          ? round.responses
-          : {},
+      responses: normalizeResponses(round.responses),
       isSealed: round.isSealed === true,
     },
   };

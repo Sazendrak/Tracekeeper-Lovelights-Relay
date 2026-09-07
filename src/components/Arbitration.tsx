@@ -52,7 +52,17 @@ export function Arbitration() {
                   value={typeof guess === 'number' ? guess : ''}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    setAgentGuess(agent.id, raw === '' ? null : Number(raw));
+                    if (raw === '') {
+                      setAgentGuess(agent.id, null);
+                      return;
+                    }
+                    const num = Number(raw);
+                    setAgentGuess(
+                      agent.id,
+                      Number.isFinite(num)
+                        ? Math.min(100, Math.max(1, num))
+                        : null,
+                    );
                   }}
                 />
               </div>
