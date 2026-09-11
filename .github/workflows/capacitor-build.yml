@@ -30,6 +30,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Caches the Gradle distribution, dependency/artifact caches, and the
+      # Gradle build cache across runs (written on main, read everywhere),
+      # so warm builds skip downloads and reuse unchanged task outputs.
+      - name: Setup Gradle Caching
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install Node Dependencies
         run: npm ci
 
