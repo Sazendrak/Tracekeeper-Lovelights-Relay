@@ -7,12 +7,13 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build_web_and_apk:
     runs-on: ubuntu-latest
+    permissions:
+      # Required to publish the signed APK as a GitHub Release.
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,6 +29,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      # Caches the Gradle distribution, dependency/artifact caches, and the
+      # Gradle build cache across runs (written on main, read everywhere),
+      # so warm builds skip downloads and reuse unchanged task outputs.
+      - name: Setup Gradle Caching
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install Node Dependencies
         run: npm ci
@@ -45,21 +52,99 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Assemble Debug APK
+      - name: Derive Version Info
+        id: version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "ANDROID_VERSION_NAME=$VERSION"
+            echo "ANDROID_VERSION_CODE=${{ github.run_number }}"
+          } >> "$GITHUB_ENV"
+
+      # Uses the keystore from repository secrets when configured. Otherwise a
+      # one-off CI keystore is generated so the release APK is still fully
+      # signed and installable; note that in-place updates on a device require
+      # every build to be signed with the same key, so configuring the
+      # ANDROID_KEYSTORE_* secrets is strongly recommended.
+      - name: Prepare Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+            echo "Signing with the keystore from repository secrets."
+          else
+            KEYSTORE_PASSWORD="$(openssl rand -hex 24)"
+            echo "::add-mask::$KEYSTORE_PASSWORD"
+            KEY_ALIAS="relay-manager-ci"
+            KEY_PASSWORD="$KEYSTORE_PASSWORD"
+            keytool -genkeypair -keystore "$KEYSTORE_PATH" -alias "$KEY_ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+              -dname "CN=Relay Manager CI, OU=CI, O=Relay Manager"
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret configured. The APK was signed with an ephemeral CI keystore, so installing a newer build over an existing install will require an uninstall first. Add the ANDROID_KEYSTORE_* secrets for a stable signature."
+          fi
+          {
+            echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "ANDROID_KEY_ALIAS=$KEY_ALIAS"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Assemble Signed Release APK
         working-directory: ./android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: Upload APK Artifact
+      - name: Stage Versioned APK
+        run: |
+          mkdir -p release-artifacts
+          cp android/app/build/outputs/apk/release/app-release.apk \
+            "release-artifacts/relay-manager-v${ANDROID_VERSION_NAME}.apk"
+
+      - name: Upload APK Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
           name: relay-manager-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: release-artifacts/*.apk
+          if-no-files-found: error
+
+      # Publishes the APK to a permanent GitHub Release tagged from the
+      # package.json version. Re-running a build for the same version replaces
+      # the APK asset on the existing release.
+      - name: Publish GitHub Release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TAG="v$VERSION"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" release-artifacts/*.apk \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            echo "Updated APK asset on existing release $TAG."
+          else
+            gh release create "$TAG" release-artifacts/*.apk \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Relay Manager v$VERSION" \
+              --generate-notes \
+              --latest \
+              --target "$GITHUB_SHA"
+            echo "Created release $TAG."
+          fi
 
   deploy_web:
     needs: build_web_and_apk
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
