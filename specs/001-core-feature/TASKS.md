@@ -18,3 +18,4 @@
 - [DONE] Assemble components into main `App.tsx` layout.
 - [DONE] Initialize Capacitor (`npx cap init` and `npx cap add android`).
 - [DONE] Write GitHub Actions CI/CD workflow to `.github/workflows/capacitor-build.yml` including GH Pages deployment.
+- [DONE] Upgrade APK pipeline to signed release builds: env-driven signing config in `android/app/build.gradle`, version injection from `package.json` + run number, and publishing the versioned APK to a permanent GitHub Release (with ephemeral-keystore fallback when `ANDROID_KEYSTORE_*` secrets are absent).
